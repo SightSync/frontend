@@ -220,6 +220,7 @@ class MainActivity : ComponentActivity() {
                         File(cacheDir, "audio.mp3").also {
                             recorder.start(it)
                             audioFile = it
+                            player.stop()
                         }
                         DisposableEffect(Unit) {
                             onDispose {
