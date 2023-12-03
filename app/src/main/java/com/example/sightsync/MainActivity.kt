@@ -180,26 +180,20 @@ class MainActivity : ComponentActivity() {
                     val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!).execute()
                     if (captionCall.isSuccessful) {
                         cogCaption = captionCall.body()
+                        val ttsCall = ttsAPI.getAudio(cogCaption!!).execute()
+                        if (ttsCall.isSuccessful) {
+                            var audioFile: File?
+                            ttsCall.body()?.byteStream()?.use { input ->
+                                audioFile = File(cacheDir, "tts.mp3")
+                                audioFile!!.outputStream().use { output ->
+                                    input.copyTo(output)
+                                }.also {
+                                    player.playFile(audioFile!!)
+                                }
+                            }
+                        }
                     }
-                    println("\n")
-                    println("\n")
-                    println("\n")
-                    println("\n")
-                    println("\n")
-                    println(cogCaption)
                 }
-//                val ttsCall = ttsAPI.getAudio(transcription!!).execute()
-//                if (ttsCall.isSuccessful) {
-//                    var audioFile: File?
-//                    ttsCall.body()?.byteStream()?.use { input ->
-//                        audioFile = File(cacheDir, "tts.mp3")
-//                        audioFile!!.outputStream().use { output ->
-//                            input.copyTo(output)
-//                        }.also {
-//                            player.playFile(audioFile!!)
-//                        }
-//                    }
-//                }
             }
         }
     }
