@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat
 import com.example.sightsync.api.cog.PostCaptionServiceCog
 import com.example.sightsync.api.cog.PostImageServiceCog
 import com.example.sightsync.api.other.PostImageService
+import com.example.sightsync.api.other.PostIntentService
 import com.example.sightsync.api.other.SttService
 import com.example.sightsync.api.other.TtsService
 import com.example.sightsync.playback.AndroidAudioPlayer
@@ -67,6 +68,13 @@ class MainActivity : ComponentActivity() {
 
     private var apiImageCogId: String? = null
     private var cogCaption: String? = null
+
+    private val QUERY_INTENTS: List<String> = listOf(
+        "GENERAL",
+        "LOCATION",
+        "TEXT",
+        "UNCERTAIN"
+    )
 
     private val sttAPI by lazy {
         SttService().sttAPI
@@ -161,8 +169,20 @@ class MainActivity : ComponentActivity() {
                 val call = sttAPI.getTranscription(audioPart).execute()
                 if (call.isSuccessful) {
                     transcription = call.body()
+                    getQueryIntent(transcription!!)
                 }
             }
+        }
+    }
+
+    private fun getQueryIntent(transcription: String) {
+        val query_intent = PostIntentService().postIntentAPI.postIntent(transcription).execute()
+        if (query_intent.isSuccessful) {
+            val intent = query_intent.body()
+            if (intent == "LOCATION") {
+
+            }
+
         }
     }
 
