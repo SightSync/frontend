@@ -76,6 +76,8 @@ class MainActivity : ComponentActivity() {
         TtsService().ttsAPI
     }
 
+    private val prompt = "You're a visual impaired person assistant, and the next sentence is the question that this person has made to you."
+
     private val postImageAPI by lazy {
         PostImageService().postImageAPI
     }
@@ -177,7 +179,7 @@ class MainActivity : ComponentActivity() {
                 }
                 if (callCog.isSuccessful) {
                     apiImageCogId = callCog.body()
-                    val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!).execute()
+                    val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!, prompt + transcription).execute()
                     if (captionCall.isSuccessful) {
                         cogCaption = captionCall.body()
                         val ttsCall = ttsAPI.getAudio(cogCaption!!).execute()
