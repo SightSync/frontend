@@ -1,5 +1,7 @@
 package com.example.sightsync
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.Environment
 import androidx.activity.ComponentActivity
@@ -33,9 +35,18 @@ import okhttp3.MediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
+fun reduceImageFileQuality(imageFile: File, quality: Int): File {
+    val bitmap = BitmapFactory.decodeFile(imageFile.absolutePath)
+    val stream = FileOutputStream(imageFile)
+    bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
+    stream.flush()
+    stream.close()
+    return imageFile
+}
 
 class MainActivity : ComponentActivity() {
     private val recorder by lazy {
@@ -99,6 +110,8 @@ class MainActivity : ComponentActivity() {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     imageFile = File(output.savedUri?.path) // Assign the taken image to the imageFile variable
+                    imageFile = reduceImageFileQuality(imageFile!!, 30)
+                    uploadImage()
                 }
 
                 override fun onError(exc: ImageCaptureException) {
@@ -181,7 +194,6 @@ class MainActivity : ComponentActivity() {
                                 recorder.stop()
                                 uploadAudio()
                                 takePicture()
-                                uploadImage()
                             }
                         }
                     }
