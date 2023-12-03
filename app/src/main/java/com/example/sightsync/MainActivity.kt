@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -260,6 +261,7 @@ class MainActivity : ComponentActivity() {
                                 recorder.stop()
                                 uploadAudio()
                                 takePicture()
+                                synthesiseText("Question submitted, please wait for the response")
                             }
                         }
                     }
@@ -268,6 +270,12 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         interactionSource = recordInteractionSource
                     ) {
+                    }
+                    LaunchedEffect(Unit) {
+                        GlobalScope.launch(Dispatchers.IO) {
+                            synthesiseText("Welcome to SightSync, press and hold on the device screen to record any question you have about your surroundings. Feel free to " +
+                                    "press at any time to interrupt the response and ask another question.")
+                        }
                     }
                 }
             }
