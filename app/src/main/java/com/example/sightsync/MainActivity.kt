@@ -26,6 +26,8 @@ import androidx.core.content.ContextCompat
 import com.example.sightsync.api.cog.PostImageServiceCog
 import com.example.sightsync.api.other.PostImageService
 import com.example.sightsync.api.other.SttService
+import com.example.sightsync.api.other.TtsService
+import com.example.sightsync.playback.AndroidAudioPlayer
 import com.example.sightsync.recorder.AndroidAudioRecorder
 import com.example.sightsync.ui.theme.SightsyncTheme
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +54,9 @@ class MainActivity : ComponentActivity() {
     private val recorder by lazy {
         AndroidAudioRecorder(applicationContext)
     }
+    private val player by lazy {
+        AndroidAudioPlayer(applicationContext)
+    }
 
     private var audioFile: File? = null
 
@@ -65,15 +70,19 @@ class MainActivity : ComponentActivity() {
         SttService().sttAPI
     }
 
+    private val ttsAPI by lazy {
+        TtsService().ttsAPI
+    }
+
     private val postImageAPI by lazy {
         PostImageService().postImageAPI
     }
 
-    private val  postImageCogAPI by lazy {
+    private val postImageCogAPI by lazy {
         PostImageServiceCog().postImageAPI
     }
 
-    private var transcription: String? = null
+    private var transcription: String? = "Hello World"
 
     private lateinit var imageCapture: ImageCapture
     private lateinit var cameraExecutor: ExecutorService
@@ -109,7 +118,8 @@ class MainActivity : ComponentActivity() {
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    imageFile = File(output.savedUri?.path) // Assign the taken image to the imageFile variable
+                    imageFile =
+                        File(output.savedUri?.path) // Assign the taken image to the imageFile variable
                     imageFile = reduceImageFileQuality(imageFile!!, 30)
                     uploadImage()
                 }
@@ -151,16 +161,28 @@ class MainActivity : ComponentActivity() {
     private fun uploadImage() {
         imageFile?.let {
             GlobalScope.launch(Dispatchers.IO) {
-                val requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile!!)
-                val imagePart =
-                    MultipartBody.Part.createFormData("image", imageFile!!.name, requestFile)
-                val call = postImageAPI.postImage(imagePart).execute()
-                val callCog = postImageCogAPI.postImage(imagePart).execute()
-                if (call.isSuccessful) {
-                    apiImageId = call.body()
-                }
-                if (callCog.isSuccessful) {
-                    apiImageCogId = callCog.body()
+//                val requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile!!)
+//                val imagePart =
+//                    MultipartBody.Part.createFormData("image", imageFile!!.name, requestFile)
+//                val call = postImageAPI.postImage(imagePart).execute()
+//                val callCog = postImageCogAPI.postImage(imagePart).execute()
+//                if (call.isSuccessful) {
+//                    apiImageId = call.body()
+//                }
+//                if (callCog.isSuccessful) {
+//                    apiImageCogId = callCog.body()
+//                }
+                val ttsCall = ttsAPI.getAudio(transcription!!).execute()
+                if (ttsCall.isSuccessful) {
+                    var audioFile: File?
+                    ttsCall.body()?.byteStream()?.use { input ->
+                        audioFile = File(cacheDir, "tts.mp3")
+                        audioFile!!.outputStream().use { output ->
+                            input.copyTo(output)
+                        }.also {
+                            player.playFile(audioFile!!)
+                        }
+                    }
                 }
             }
         }
