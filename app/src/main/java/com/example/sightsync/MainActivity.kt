@@ -177,7 +177,11 @@ class MainActivity : ComponentActivity() {
                 }
                 if (callCog.isSuccessful) {
                     apiImageCogId = callCog.body()
-                    val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!).execute()
+                    var prompt = "Describe the image"
+                    if (transcription != null && transcription != "") {
+                        prompt = transcription!!
+                    }
+                    val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!, prompt).execute()
                     if (captionCall.isSuccessful) {
                         cogCaption = captionCall.body()
                         val ttsCall = ttsAPI.getAudio(cogCaption!!).execute()

@@ -8,7 +8,7 @@ interface PostCaptionAPI {
     @POST("caption/")
     fun postCaption(
         @Query("image_name") image_name: String,
-        @Query("query") query: String = "Describe the image as best as possible, given that you're an assistant to a visual impaired person"
+        @Query("query") query: String
     ): Call<String>
 }
 
