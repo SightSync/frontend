@@ -14,7 +14,7 @@ interface PostImageAPI {
     ): Call<String>
 }
 
-class PostImageService {
+class PostImageServiceCog {
     private val retrofit = CogApiRetrofitClient.retrofit
     val postImageAPI: PostImageAPI = retrofit.create(PostImageAPI::class.java)
 }
