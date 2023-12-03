@@ -69,13 +69,6 @@ class MainActivity : ComponentActivity() {
     private var apiImageCogId: String? = null
     private var cogCaption: String? = null
 
-    private val QUERY_INTENTS: List<String> = listOf(
-        "GENERAL",
-        "LOCATION",
-        "TEXT",
-        "UNCERTAIN"
-    )
-
     private val sttAPI by lazy {
         SttService().sttAPI
     }
@@ -180,9 +173,26 @@ class MainActivity : ComponentActivity() {
         if (query_intent.isSuccessful) {
             val intent = query_intent.body()
             if (intent == "LOCATION") {
-
+                println("LOCATION")
             }
-
+            else {
+                val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!, prompt + transcription).execute()
+                if (captionCall.isSuccessful) {
+                    cogCaption = captionCall.body()
+                    val ttsCall = ttsAPI.getAudio(cogCaption!!).execute()
+                    if (ttsCall.isSuccessful) {
+                        var audioFile: File?
+                        ttsCall.body()?.byteStream()?.use { input ->
+                            audioFile = File(cacheDir, "tts.mp3")
+                            audioFile!!.outputStream().use { output ->
+                                input.copyTo(output)
+                            }.also {
+                                player.playFile(audioFile!!)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -199,22 +209,6 @@ class MainActivity : ComponentActivity() {
                 }
                 if (callCog.isSuccessful) {
                     apiImageCogId = callCog.body()
-                    val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!, prompt + transcription).execute()
-                    if (captionCall.isSuccessful) {
-                        cogCaption = captionCall.body()
-                        val ttsCall = ttsAPI.getAudio(cogCaption!!).execute()
-                        if (ttsCall.isSuccessful) {
-                            var audioFile: File?
-                            ttsCall.body()?.byteStream()?.use { input ->
-                                audioFile = File(cacheDir, "tts.mp3")
-                                audioFile!!.outputStream().use { output ->
-                                    input.copyTo(output)
-                                }.also {
-                                    player.playFile(audioFile!!)
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
