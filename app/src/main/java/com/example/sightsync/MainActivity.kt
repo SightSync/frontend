@@ -27,6 +27,7 @@ import com.example.sightsync.api.cog.PostCaptionServiceCog
 import com.example.sightsync.api.cog.PostImageServiceCog
 import com.example.sightsync.api.other.PostImageService
 import com.example.sightsync.api.other.PostIntentService
+import com.example.sightsync.api.other.PostLocationService
 import com.example.sightsync.api.other.SttService
 import com.example.sightsync.api.other.TtsService
 import com.example.sightsync.playback.AndroidAudioPlayer
@@ -77,7 +78,7 @@ class MainActivity : ComponentActivity() {
         TtsService().ttsAPI
     }
 
-    private val prompt = "You're a visual impaired person assistant, and the next sentence is the question that this person has made to you."
+    private val prompt = "Answer the following query about the image: "
 
     private val postImageAPI by lazy {
         PostImageService().postImageAPI
@@ -162,35 +163,51 @@ class MainActivity : ComponentActivity() {
                 val call = sttAPI.getTranscription(audioPart).execute()
                 if (call.isSuccessful) {
                     transcription = call.body()
-                    getQueryIntent(transcription!!)
+                    getQueryIntent()
                 }
             }
         }
     }
 
-    private fun getQueryIntent(transcription: String) {
-        val query_intent = PostIntentService().postIntentAPI.postIntent(transcription).execute()
+    private fun getQueryIntent() {
+        if (transcription.isNullOrBlank() || transcription!!.length < 5) {
+            transcription = "Describe the surroundings"
+        }
+
+        val query_intent = PostIntentService().postIntentAPI.postIntent(transcription!!).execute()
         if (query_intent.isSuccessful) {
             val intent = query_intent.body()
             if (intent == "LOCATION") {
-                println("LOCATION")
-            }
-            else {
-                val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!, prompt + transcription).execute()
+                val location_text = PostLocationService().postLocationAPI.postLocation(
+                    apiImageCogId!!,
+                    transcription!!
+                ).execute()
+                if (location_text.isSuccessful) {
+                    location_text.body()?.let {
+                        synthesiseText(it)
+                    }
+                }
+            } else {
+                val captionCall =
+                    postCaptionCogAPI.postCaption(apiImageCogId!!, prompt + transcription).execute()
                 if (captionCall.isSuccessful) {
                     cogCaption = captionCall.body()
-                    val ttsCall = ttsAPI.getAudio(cogCaption!!).execute()
-                    if (ttsCall.isSuccessful) {
-                        var audioFile: File?
-                        ttsCall.body()?.byteStream()?.use { input ->
-                            audioFile = File(cacheDir, "tts.mp3")
-                            audioFile!!.outputStream().use { output ->
-                                input.copyTo(output)
-                            }.also {
-                                player.playFile(audioFile!!)
-                            }
-                        }
-                    }
+                    synthesiseText(cogCaption!!)
+                }
+            }
+        }
+    }
+
+    private fun synthesiseText(text: String) {
+        val ttsCall = ttsAPI.getAudio(text).execute()
+        if (ttsCall.isSuccessful) {
+            var audioFile: File?
+            ttsCall.body()?.byteStream()?.use { input ->
+                audioFile = File(cacheDir, "tts.mp3")
+                audioFile!!.outputStream().use { output ->
+                    input.copyTo(output)
+                }.also {
+                    player.playFile(audioFile!!)
                 }
             }
         }
