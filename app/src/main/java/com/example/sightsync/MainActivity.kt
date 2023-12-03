@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.example.sightsync.api.cog.PostCaptionServiceCog
 import com.example.sightsync.api.cog.PostImageServiceCog
 import com.example.sightsync.api.other.PostImageService
 import com.example.sightsync.api.other.SttService
@@ -65,6 +66,7 @@ class MainActivity : ComponentActivity() {
     private var apiImageId: String? = null
 
     private var apiImageCogId: String? = null
+    private var cogCaption: String? = null
 
     private val sttAPI by lazy {
         SttService().sttAPI
@@ -80,6 +82,10 @@ class MainActivity : ComponentActivity() {
 
     private val postImageCogAPI by lazy {
         PostImageServiceCog().postImageAPI
+    }
+
+    private val postCaptionCogAPI by lazy {
+        PostCaptionServiceCog().postCaptionAPI
     }
 
     private var transcription: String? = "Hello World"
@@ -161,29 +167,39 @@ class MainActivity : ComponentActivity() {
     private fun uploadImage() {
         imageFile?.let {
             GlobalScope.launch(Dispatchers.IO) {
-//                val requestFile = RequestBody.create(MediaType.parse("image/*"), imageFile!!)
-//                val imagePart =
-//                    MultipartBody.Part.createFormData("image", imageFile!!.name, requestFile)
-//                val call = postImageAPI.postImage(imagePart).execute()
-//                val callCog = postImageCogAPI.postImage(imagePart).execute()
-//                if (call.isSuccessful) {
-//                    apiImageId = call.body()
-//                }
-//                if (callCog.isSuccessful) {
-//                    apiImageCogId = callCog.body()
-//                }
-                val ttsCall = ttsAPI.getAudio(transcription!!).execute()
-                if (ttsCall.isSuccessful) {
-                    var audioFile: File?
-                    ttsCall.body()?.byteStream()?.use { input ->
-                        audioFile = File(cacheDir, "tts.mp3")
-                        audioFile!!.outputStream().use { output ->
-                            input.copyTo(output)
-                        }.also {
-                            player.playFile(audioFile!!)
-                        }
-                    }
+                val requestFile = RequestBody.create(MediaType.parse("image/jpg"), imageFile!!)
+                val imagePart =
+                    MultipartBody.Part.createFormData("image", imageFile!!.name, requestFile)
+                val call = postImageAPI.postImage(imagePart).execute()
+                val callCog = postImageCogAPI.postImage(imagePart).execute()
+                if (call.isSuccessful) {
+                    apiImageId = call.body()
                 }
+                if (callCog.isSuccessful) {
+                    apiImageCogId = callCog.body()
+                    val captionCall = postCaptionCogAPI.postCaption(apiImageCogId!!).execute()
+                    if (captionCall.isSuccessful) {
+                        cogCaption = captionCall.body()
+                    }
+                    println("\n")
+                    println("\n")
+                    println("\n")
+                    println("\n")
+                    println("\n")
+                    println(cogCaption)
+                }
+//                val ttsCall = ttsAPI.getAudio(transcription!!).execute()
+//                if (ttsCall.isSuccessful) {
+//                    var audioFile: File?
+//                    ttsCall.body()?.byteStream()?.use { input ->
+//                        audioFile = File(cacheDir, "tts.mp3")
+//                        audioFile!!.outputStream().use { output ->
+//                            input.copyTo(output)
+//                        }.also {
+//                            player.playFile(audioFile!!)
+//                        }
+//                    }
+//                }
             }
         }
     }
